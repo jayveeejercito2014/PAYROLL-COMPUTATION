@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDOT & Regular OT Payroll System - Overall Monthly Budget</title>
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        /* Custom Yellow Gold styling for Month & Date Pickers */
+        input[type="month"]::-webkit-calendar-picker-indicator,
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(75%) sepia(85%) saturate(1200%) hue-rotate(355deg) brightness(105%) contrast(105%);
+            cursor: pointer;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printablePayslip, #printablePayslip * { visibility: visible; }
+            #printablePayslip { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; }
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200 min-h-screen flex flex-col md:flex-row">
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside id="sidebar" class="w-full md:w-64 bg-zinc-900 border-r border-amber-500/20 p-4 flex flex-col justify-between shrink-0">
+        <div>
+            <div class="flex items-center gap-3 p-3 bg-zinc-950 border border-amber-500/30 rounded-2xl mb-6">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-xl shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-black text-amber-400 leading-tight">PAYROLL HUB</h2>
+                    <span class="text-[10px] text-zinc-400 uppercase tracking-widest font-semibold">Monthly Budget Manager</span>
+                </div>
+            </div>
+
+            <nav class="space-y-1">
+                <button onclick="showView('payrollView')" id="navPayroll" class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-3 bg-amber-500 text-zinc-950 transition shadow-md shadow-amber-500/10">
+                    <i class="fa-solid fa-money-check-dollar w-5"></i>
+                    <span>Payroll Processing</span>
+                </button>
+                <button onclick="showView('employeesView')" id="navEmployees" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-sm flex items-center gap-3 text-zinc-400 hover:text-amber-300 hover:bg-zinc-800/50 transition">
+                    <i class="fa-solid fa-users w-5"></i>
+                    <span>Employee Directory</span>
+                </button>
+                <button onclick="showView('timesheetView')" id="navTimesheet" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-sm flex items-center gap-3 text-zinc-400 hover:text-amber-300 hover:bg-zinc-800/50 transition">
+                    <i class="fa-solid fa-clock w-5"></i>
+                    <span>Attendance Log</span>
+                </button>
+                <button onclick="showView('historyView')" id="navHistory" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-sm flex items-center gap-3 text-zinc-400 hover:text-amber-300 hover:bg-zinc-800/50 transition">
+                    <i class="fa-solid fa-history w-5"></i>
+                    <span>Attendance History</span>
+                </button>
+                <button onclick="showView('payslipView')" id="navPayslips" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-sm flex items-center gap-3 text-zinc-400 hover:text-amber-300 hover:bg-zinc-800/50 transition">
+                    <i class="fa-solid fa-receipt w-5"></i>
+                    <span>Payslip Generator</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-zinc-800 text-xs text-zinc-500 flex items-center justify-between">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Auto-Save Active
+            </span>
+            <span class="font-mono text-[10px] text-zinc-600">v8.6 Cutoff & Separate OT System</span>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+        <div class="max-w-7xl mx-auto space-y-6">
+
+            <!-- 1. PAYROLL PROCESSING VIEW -->
+            <section id="payrollView" class="space-y-6">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-zinc-900 border border-amber-500/30 p-6 rounded-2xl shadow-xl">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-calculator text-amber-400 text-xl"></i>
+                            <h1 class="text-2xl md:text-3xl font-black text-amber-400 tracking-tight">Overall Payroll & Budget Processing</h1>
+                        </div>
+                        <p class="text-zinc-400 text-sm mt-1">Select a month to compute total overall payroll budget, gross earnings, and deductions for all employees.</p>
+                    </div>
+
+                    <!-- UNIFIED MONTH-YEAR DATE SELECTOR -->
+                    <div class="flex flex-wrap items-center gap-3 bg-zinc-950 p-3 rounded-xl border border-amber-500/40 shadow-inner">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-regular fa-calendar-days text-amber-400 text-sm"></i>
+                            <label for="monthlyBudgetPicker" class="text-xs font-bold text-amber-400 uppercase tracking-wide">Selected Period:</label>
+                        </div>
+                        <input type="month" id="monthlyBudgetPicker" value="2026-09" onchange="handleMonthlyPickerChange(this.value);" class="bg-amber-500/10 border-2 border-amber-500 text-amber-300 font-extrabold font-mono rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 cursor-pointer shadow-[0_0_15px_rgba(245,158,11,0.25)] hover:bg-amber-500/20 transition">
+                        <button onclick="processPayroll()" class="bg-amber-500 hover:bg-amber-400 text-zinc-950 px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 shadow-lg shadow-amber-500/20">
+                            <i class="fa-solid fa-arrows-rotate"></i> Recalculate
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Overall Monthly Budget Statistics Summary -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-md">
+                        <div class="text-zinc-400 text-xs font-bold uppercase mb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-group text-zinc-500"></i> Active Employees
+                        </div>
+                        <div id="statTotalEmployees" class="text-2xl font-black font-mono text-zinc-100">0</div>
+                        <div class="text-[11px] text-zinc-500 mt-1">Included in payroll</div>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-md">
+                        <div class="text-zinc-400 text-xs font-bold uppercase mb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-money-bill-trend-up text-emerald-400"></i> Total Monthly Gross
+                        </div>
+                        <div id="statGrossPay" class="text-2xl font-black font-mono text-zinc-100">&#8369;0.00</div>
+                        <div class="text-[11px] text-zinc-500 mt-1">Basic + Premium + OT</div>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-md">
+                        <div class="text-zinc-400 text-xs font-bold uppercase mb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-invoice-dollar text-rose-400"></i> Total Deductions
+                        </div>
+                        <div id="statDeductions" class="text-2xl font-black font-mono text-rose-400">&#8369;0.00</div>
+                        <div class="text-[11px] text-zinc-500 mt-1">Statutory & Absences</div>
+                    </div>
+                    <div class="bg-zinc-900 border border-amber-500/50 rounded-2xl p-5 shadow-lg bg-gradient-to-br from-zinc-900 to-amber-950/20">
+                        <div class="text-amber-400 text-xs font-bold uppercase mb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-wallet text-amber-400"></i> Required Monthly Budget
+                        </div>
+                        <div id="statNetPay" class="text-3xl font-black font-mono text-amber-400">&#8369;0.00</div>
+                        <div id="statBudgetPeriodLabel" class="text-[11px] text-amber-300/70 font-semibold mt-1">Net Payout for September 2026</div>
+                    </div>
+                </div>
+
+                <!-- Payroll Sheet Table -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-md">
+                    <div class="p-4 bg-zinc-950/80 border-b border-zinc-800 flex justify-between items-center">
+                        <h2 class="font-bold text-zinc-200 text-sm uppercase flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-amber-400"></i> <span id="payrollTableTitle">Overall Monthly Payroll Summary (September 2026)</span>
+                        </h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-zinc-950 text-zinc-400 uppercase text-xs border-b border-zinc-800">
+                                <tr>
+                                    <th class="py-3.5 px-4">Employee</th>
+                                    <th class="py-3.5 px-4 font-mono">Monthly Basic</th>
+                                    <th class="py-3.5 px-4 font-mono text-emerald-400">Premium Pay</th>
+                                    <th class="py-3.5 px-4 font-mono text-amber-400">RDOT Pay (1.5x)</th>
+                                    <th class="py-3.5 px-4 font-mono text-amber-300">Reg OT Pay (1.25x)</th>
+                                    <th class="py-3.5 px-4 font-mono text-rose-400">Absence Deductions</th>
+                                    <th class="py-3.5 px-4 font-mono text-rose-400">Undertime Deductions</th>
+                                    <th class="py-3.5 px-4 font-mono text-rose-400">Monthly Statutory Deductions</th>
+                                    <th class="py-3.5 px-4 font-mono text-amber-400 text-right">Net Take Home Pay</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payrollTbody" class="divide-y divide-zinc-800/60 font-mono text-zinc-300"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. EMPLOYEE DIRECTORY VIEW -->
+            <section id="employeesView" class="hidden space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-zinc-900 border border-amber-500/30 p-6 rounded-2xl">
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-black text-amber-400 tracking-tight">Employee Directory & Deduction Schedule</h1>
+                        <p class="text-zinc-400 text-sm mt-1">Configure employee basic details and monthly statutory deduction schedules.</p>
+                    </div>
+                    <button onclick="openEmployeeModal()" class="bg-amber-500 hover:bg-amber-400 text-zinc-950 px-5 py-2.5 rounded-xl text-sm font-black transition flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i> Add Employee
+                    </button>
+                </div>
+
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-zinc-950 text-zinc-400 uppercase text-xs border-b border-zinc-800">
+                                <tr>
+                                    <th class="py-3.5 px-4">Employee</th>
+                                    <th class="py-3.5 px-4">Position</th>
+                                    <th class="py-3.5 px-4 font-mono">Monthly Salary</th>
+                                    <th class="py-3.5 px-4 font-mono text-emerald-400">Premium Pay (2nd Cut-off)</th>
+                                    <th class="py-3.5 px-4 font-mono">Daily Rate (/22)</th>
+                                    <th class="py-3.5 px-4 font-mono">Hourly Rate (/8)</th>
+                                    <th class="py-3.5 px-4">Configured Deductions</th>
+                                    <th class="py-3.5 px-4 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeesTbody" class="divide-y divide-zinc-800/60 text-zinc-300"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. ATTENDANCE LOG VIEW -->
+            <section id="timesheetView" class="hidden space-y-6">
+                <div class="bg-zinc-900 border border-amber-500/30 p-6 rounded-2xl">
+                    <h1 class="text-2xl font-black text-amber-400">Flexi-Time Attendance & Rest Day OT Manager</h1>
+                    <p class="text-zinc-400 text-sm mt-1">Mon-Thu 10hr Flexi (7AM - 7PM Window). Fri-Sun Rest Day OT (1.5x).</p>
+                </div>
+
+                <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-4">
+                    <div class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle"></i> Add Entry To Attendance Log
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-zinc-950 p-4 rounded-xl border border-zinc-800 mb-4">
+                        <div>
+                            <label class="block text-xs text-amber-400 font-bold mb-1">Select Employee</label>
+                            <select id="tsEmployeeSelect" onchange="updateLiveBreakdown(); renderTimesheets();" class="w-full bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-xl px-3 py-2 text-xs font-bold">
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-zinc-400 font-bold mb-1">Specific Date</label>
+                            <input type="date" id="tsDate" onchange="handleDateInputChange(this.value);" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-amber-400 font-bold mb-1 flex items-center justify-between">
+                                Target Cut-off
+                                <span class="text-[10px] text-zinc-500 font-normal uppercase">(Auto)</span>
+                            </label>
+                            <select id="tsCutoffSelect" disabled class="w-full bg-zinc-950/70 border border-zinc-800 text-amber-400/80 rounded-xl px-3 py-2 text-xs font-bold cursor-not-allowed opacity-80 shadow-inner">
+                                <option value="1">1st Cut-off (1st - 15th)</option>
+                                <option value="2">2nd Cut-off (16th - End)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                        <div>
+                            <label class="block text-xs text-zinc-400 font-bold mb-1">Day Type</label>
+                            <select id="tsDayType" onchange="updateLiveBreakdown();" class="w-full bg-zinc-950 border border-amber-500/40 rounded-xl px-2 py-2 text-xs font-bold text-amber-400">
+                                <option value="REGULAR">Regular Flexi Day (Mon-Thu 10h)</option>
+                                <option value="RDOT">Force Rest Day OT (Fri-Sun 1.5x)</option>
+                                <option value="ABSENT">ABSENT (Whole Day Unpaid)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-zinc-400 font-bold mb-1">Time In</label>
+                            <input type="text" id="tsTimeIn" value="07:00:00" oninput="updateLiveBreakdown()" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-zinc-400 font-bold mb-1">Time Out</label>
+                            <input type="text" id="tsTimeOut" value="18:00:00" oninput="updateLiveBreakdown()" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 font-mono">
+                        </div>
+                        <div>
+                            <button id="btnSaveAttendance" onclick="addAttendanceEntry()" class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 h-[42px]">
+                                Add Entry
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- EXCEL EXACT BREAKDOWN DISPLAY -->
+                    <div class="bg-zinc-950 border border-zinc-800/80 p-4 rounded-xl font-mono text-xs space-y-2 mt-2">
+                        <div class="text-amber-400 font-bold flex items-center gap-2 border-b border-zinc-800 pb-2">
+                            <i class="fa-solid fa-calculator"></i> COMPUTATION BREAKDOWN:
+                        </div>
+                        <div id="liveFormulaBreakdown" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-zinc-300">
+                            <div>Hrs Pay: (<span id="calcHourlyRate">112.18181818</span> * <span id="calcHrs">0</span>h * <span id="calcMultiplier">1.25</span>) = <span id="calcHrsPay" class="text-amber-400 font-bold">&#8369;0.00</span></div>
+                            <div>Mins Pay: (<span id="calcMinRate">1.86969697</span> * <span id="calcMins">0</span>m * <span id="calcMultiplier2">1.25</span>) = <span id="calcMinsPay" class="text-amber-400 font-bold">&#8369;0.00</span></div>
+                        </div>
+                        <div class="pt-2 border-t border-zinc-800/80 font-bold text-amber-400 text-sm flex flex-wrap justify-between gap-2">
+                            <span>Total OT Pay Sum: <span id="calcTotalSum">&#8369;0.00</span> <span id="calcTypeBadge" class="ml-2 text-xs font-normal text-zinc-400"></span></span>
+                            <span id="calcUndertimeDisplay" class="text-xs text-rose-400 font-bold"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <button id="btnCancelEdit" onclick="cancelAttendanceEdit()" class="hidden bg-zinc-800 text-zinc-300 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2">
+                            <i class="fa-solid fa-xmark"></i> Cancel Edit
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                    <div class="p-4 bg-zinc-950 border-b border-zinc-800 font-bold text-xs text-amber-400 uppercase">
+                        Current Cut-off Attendance Log List
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-zinc-950 text-zinc-400 uppercase text-xs border-b border-zinc-800">
+                                <tr>
+                                    <th class="py-3 px-4">Employee</th>
+                                    <th class="py-3 px-4">Date / Day Type</th>
+                                    <th class="py-3 px-4 font-mono">Time In / Time Out</th>
+                                    <th class="py-3 px-4 font-mono">Rendered Work</th>
+                                    <th class="py-3 px-4 font-mono text-rose-400">Status / Deductions</th>
+                                    <th class="py-3 px-4 text-right font-mono text-amber-400">RDOT / OT Pay</th>
+                                    <th class="py-3 px-4 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timesheetTbody" class="divide-y divide-zinc-800 font-mono text-zinc-300"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. ATTENDANCE HISTORY VIEW -->
+            <section id="historyView" class="hidden space-y-6">
+                <div class="bg-zinc-900 border border-amber-500/30 p-6 rounded-2xl">
+                    <h1 class="text-2xl font-black text-amber-400">Attendance Log History</h1>
+                    <p class="text-zinc-400 text-sm mt-1">View historical attendance entries by employee for the selected month and cut-off period.</p>
+                </div>
+
+                <!-- History Monthly Filters -->
+                <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex flex-wrap gap-4 items-center">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-400 uppercase mb-1">Filter Employee</label>
+                        <select id="histEmpSelect" onchange="renderHistoryTable()" class="bg-zinc-950 border border-zinc-700 text-zinc-100 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-400">
+                            <option value="ALL">All Employees</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-400 uppercase mb-1">Filter Month (Whole Month)</label>
+                        <input type="month" id="histMonthPicker" value="2026-09" onchange="renderHistoryTable()" class="bg-zinc-950 border border-zinc-700 text-amber-400 font-bold rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-400 uppercase mb-1">Filter Cut-off Period</label>
+                        <select id="histCutoffSelect" onchange="renderHistoryTable()" class="bg-zinc-950 border border-zinc-700 text-amber-400 font-bold rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer">
+                            <option value="ALL">Whole Month (1st & 2nd Cutoff)</option>
+                            <option value="1">1st Cut-off (1st - 15th)</option>
+                            <option value="2">2nd Cut-off (16th - End)</option>
+                            <option value="OT">Overtime & RDOT Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- History Table -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-zinc-950 text-zinc-400 uppercase text-xs border-b border-zinc-800">
+                                <tr>
+                                    <th class="py-3 px-4">Employee</th>
+                                    <th class="py-3 px-4">Date</th>
+                                    <th class="py-3 px-4">Cut-off Period</th>
+                                    <th class="py-3 px-4 font-mono">Time In / Out</th>
+                                    <th class="py-3 px-4 font-mono">Work Hrs</th>
+                                    <th class="py-3 px-4 font-mono text-amber-400">RDOT/OT Pay</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTbody" class="divide-y divide-zinc-800 font-mono text-zinc-300"></tbody>
+                            <tfoot id="historyTfoot" class="bg-zinc-950 font-mono text-xs border-t-2 border-zinc-800"></tfoot>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. PAYSLIP GENERATOR VIEW -->
+            <section id="payslipView" class="hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-zinc-900 border border-amber-500/30 p-6 rounded-2xl">
+                    <div>
+                        <h1 class="text-2xl font-black text-amber-400">Official Payslip Generator</h1>
+                        <p class="text-zinc-400 text-sm mt-1">Generate printable individual payslips for 1st Cut-off, 2nd Cut-off, or Separate Overtime Pay.</p>
+                    </div>
+                    <button onclick="window.print()" class="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Print Payslip
+                    </button>
+                </div>
+
+                <!-- PAYSLIP GENERATOR CONTROLS (SELECTION BAR) -->
+                <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex flex-wrap gap-4 items-center">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-400 uppercase mb-1">Select Employee:</label>
+                        <select id="payslipEmployeeSelect" onchange="generatePayslipView()" class="bg-zinc-950 border border-zinc-700 text-zinc-100 font-bold rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-amber-400 focus:outline-none"></select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-amber-400 uppercase mb-1">Select Month:</label>
+                        <input type="month" id="payslipMonthPicker" value="2026-09" onchange="generatePayslipView()" class="bg-zinc-950 border border-zinc-700 text-amber-400 font-bold rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-amber-400 cursor-pointer">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-amber-400 uppercase mb-1">Target Cut-off Period:</label>
+                        <select id="payslipCutoffSelect" onchange="generatePayslipView()" class="bg-zinc-950 border border-amber-500/50 text-amber-300 font-bold rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-amber-400">
+                            <option value="1">1st Cut-off (1st - 15th)</option>
+                            <option value="2">2nd Cut-off (16th - End)</option>
+                            <option value="MONTH">Whole Month Summary</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-amber-400 uppercase mb-1">Payslip Mode:</label>
+                        <select id="payslipPayTypeSelect" onchange="generatePayslipView()" class="bg-zinc-950 border border-amber-500/50 text-amber-300 font-bold rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-amber-400">
+                            <option value="REGULAR">Regular Cutoff Payslip (Excl. Overtime)</option>
+                            <option value="OT_ONLY">Separate Overtime Payslip (RDOT & Reg OT)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SEPARATE OT NOTICE BANNER -->
+                <div id="psNoticeBanner" class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-xs text-amber-300 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-amber-400 text-sm shrink-0"></i>
+                    <span><strong>Note:</strong> Overtime (RDOT & Regular OT) is <u>excluded</u> from 1st & 2nd cutoff regular payslips. Select "Separate Overtime Payslip" mode above to generate overtime payout slips.</span>
+                </div>
+
+                <!-- PRINTABLE PAYSLIP CARD -->
+                <div id="printablePayslip" class="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl max-w-2xl mx-auto space-y-6 text-zinc-200 shadow-2xl">
+                    <div class="text-center border-b border-zinc-800 pb-4">
+                        <div id="psTypeBadge" class="inline-block px-3 py-0.5 mb-1 text-[10px] font-black uppercase rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                            REGULAR CUTOFF PAYSLIP
+                        </div>
+                        <h2 id="psHeaderTitle" class="text-2xl font-black text-amber-400 tracking-wide uppercase">Official Payslip</h2>
+                        <p id="psPayPeriod" class="text-xs text-zinc-400 font-mono mt-1">Pay Period: September 1 - 15, 2026 (1st Cut-off)</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 text-xs font-mono">
+                        <div>
+                            <span class="text-zinc-500 block">EMPLOYEE NAME:</span>
+                            <span id="psEmpName" class="text-sm font-bold text-zinc-100">---</span>
+                        </div>
+                        <div>
+                            <span class="text-zinc-500 block">POSITION:</span>
+                            <span id="psEmpPosition" class="text-sm font-bold text-zinc-100">---</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-b border-zinc-800 py-4 text-xs">
+                        <!-- Earnings Column -->
+                        <div class="space-y-2">
+                            <h3 class="font-bold text-amber-400 uppercase flex items-center justify-between">
+                                <span>Earnings</span>
+                                <span id="psEarningsLabel" class="text-[10px] text-zinc-500 font-normal"></span>
+                            </h3>
+                            <div class="flex justify-between font-mono"><span>Basic Pay:</span><span id="psBasicPay">&#8369;0.00</span></div>
+                            <div class="flex justify-between font-mono"><span class="text-emerald-400">Premium Pay:</span><span id="psPremiumPay" class="text-emerald-400">&#8369;0.00</span></div>
+                            <div class="flex justify-between font-mono"><span class="text-amber-400">RDOT Pay (1.5x):</span><span id="psRdotPay">&#8369;0.00</span></div>
+                            <div class="flex justify-between font-mono"><span class="text-amber-300">Reg OT Pay (1.25x):</span><span id="psRegOtPay">&#8369;0.00</span></div>
+                            <div class="flex justify-between font-mono font-bold text-zinc-100 pt-2 border-t border-zinc-800"><span>Gross Pay:</span><span id="psGrossPay">&#8369;0.00</span></div>
+                        </div>
+
+                        <!-- Deductions Column -->
+                        <div class="space-y-2">
+                            <h3 class="font-bold text-rose-400 uppercase">Deductions</h3>
+                            <div class="flex justify-between font-mono"><span>Absence Deduction:</span><span id="psAbsentDeduction" class="text-rose-400">&#8369;0.00</span></div>
+                            <div class="flex justify-between font-mono"><span>Late / Undertime:</span><span id="psLateDeduction">&#8369;0.00</span></div>
+                            <div class="flex justify-between font-mono"><span>SSS:</span><span id="psSss">&#8369;0.00</span></div>
+                            <div class="flex justify-between font-mono"><span>PhilHealth:</span><span id="psPhilhealth">&#8369;0.00</span></div>
+                            <div class="flex justify-between font-mono"><span>Pag-IBIG:</span><span id="psPagibig">&#8369;0.00</span></div>
+                            <div class="flex justify-between font-mono"><span>Withholding Tax:</span><span id="psTax">&#8369;0.00</span></div>
+                            <div class="flex justify-between font-mono font-bold text-rose-400 pt-2 border-t border-zinc-800"><span>Total Deductions:</span><span id="psTotalDeductions">&#8369;0.00</span></div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2">
+                        <span class="text-sm font-black text-amber-400 uppercase">NET TAKE HOME PAY:</span>
+                        <span id="psNetPay" class="text-2xl font-black font-mono text-amber-400">&#8369;0.00</span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- MODAL FOR EMPLOYEE SETUP -->
+    <div id="empModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-amber-400 text-lg">Employee Setup & Deduction Timing</h3>
+            <div class="space-y-3">
+                <input type="hidden" id="modalEmpId">
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1">Full Name</label>
+                    <input type="text" id="modalEmpName" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100">
+                </div>
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1">Position / Job Title</label>
+                    <input type="text" id="modalEmpPosition" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100">
+                </div>
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1">Monthly Basic Salary (&#8369;)</label>
+                    <input type="number" id="modalEmpSalary" value="19744.00" step="0.01" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100">
+                </div>
+
+                <!-- PREMIUM ENTRY FIELD -->
+                <div>
+                    <label class="block text-xs text-emerald-400 font-bold mb-1">Monthly Premium Pay (&#8369;) <span class="text-[10px] text-zinc-400 font-normal italic">(Released on 2nd Cut-off)</span></label>
+                    <input type="number" id="modalEmpPremium" value="0.00" step="0.01" placeholder="0.00" class="w-full bg-zinc-950 border border-emerald-500/50 rounded-xl px-3 py-2 text-sm text-emerald-300 font-mono">
+                </div>
+
+                <div class="pt-3 border-t border-zinc-800 space-y-3">
+                    <label class="block text-xs font-bold text-amber-400 uppercase tracking-wide">Custom Deductions & Cut-off Schedule</label>
+                    
+                    <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-2.5 rounded-xl border border-zinc-800">
+                        <div>
+                            <label class="block text-[11px] text-zinc-400">SSS Amount (&#8369;)</label>
+                            <input type="number" id="numSss" value="500" step="0.01" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-zinc-100 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-zinc-400">When to Deduct?</label>
+                            <select id="schedSss" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-amber-400 font-bold">
+                                <option value="1">1st Cut-off Only</option>
+                                <option value="2">2nd Cut-off Only</option>
+                                <option value="split">Split (50/50 Each Cut-off)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-2.5 rounded-xl border border-zinc-800">
+                        <div>
+                            <label class="block text-[11px] text-zinc-400">PhilHealth Amount (&#8369;)</label>
+                            <input type="number" id="numPhilhealth" value="312.50" step="0.01" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-zinc-100 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-zinc-400">When to Deduct?</label>
+                            <select id="schedPhilhealth" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-amber-400 font-bold">
+                                <option value="1">1st Cut-off Only</option>
+                                <option value="2">2nd Cut-off Only</option>
+                                <option value="split">Split (50/50 Each Cut-off)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-2.5 rounded-xl border border-zinc-800">
+                        <div>
+                            <label class="block text-[11px] text-zinc-400">Pag-IBIG Amount (&#8369;)</label>
+                            <input type="number" id="numPagibig" value="100" step="0.01" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-zinc-100 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-zinc-400">When to Deduct?</label>
+                            <select id="schedPagibig" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-amber-400 font-bold">
+                                <option value="1">1st Cut-off Only</option>
+                                <option value="2">2nd Cut-off Only</option>
+                                <option value="split">Split (50/50 Each Cut-off)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-2.5 rounded-xl border border-zinc-800">
+                        <div>
+                            <label class="block text-[11px] text-zinc-400">Withholding Tax (&#8369;)</label>
+                            <input type="number" id="numTax" value="0" step="0.01" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-zinc-100 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-zinc-400">When to Deduct?</label>
+                            <select id="schedTax" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-amber-400 font-bold">
+                                <option value="2">2nd Cut-off Only</option>
+                                <option value="1">1st Cut-off Only</option>
+                                <option value="split">Split (50/50 Each Cut-off)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3">
+                <button onclick="closeEmployeeModal()" class="px-4 py-2 bg-zinc-800 text-zinc-300 text-xs rounded-xl">Cancel</button>
+                <button onclick="saveEmployee()" class="px-4 py-2 bg-amber-500 text-zinc-950 font-bold text-xs rounded-xl">Save Employee</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRMATION MODAL -->
+    <div id="customConfirmModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 text-lg">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h3 id="confirmModalTitle" class="font-bold text-zinc-100 text-base">Are you sure?</h3>
+                    <p id="confirmModalMessage" class="text-xs text-zinc-400 mt-0.5">This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button id="btnConfirmCancel" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs rounded-xl transition">Cancel</button>
+                <button id="btnConfirmProceed" class="px-4 py-2 bg-rose-500 hover:bg-rose-400 text-zinc-950 font-black text-xs rounded-xl transition">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- LOGIC SCRIPT -->
+    <script>
+        let editingIndex = null;
+
+        const monthFullNames = {
+            "01": "January", "02": "February", "03": "March", "04": "April",
+            "05": "May", "06": "June", "07": "July", "08": "August",
+            "09": "September", "10": "October", "11": "November", "12": "December"
+        };
+
+        const monthNamesList = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        function getLastDayOfMonth(year, monthIndex) {
+            return new Date(year, monthIndex + 1, 0).getDate();
+        }
+
+        let employees = JSON.parse(localStorage.getItem('payroll_employees')) || [
+            {
+                id: "EMP-001",
+                name: "Jayvee G. Ejercito",
+                position: "Administrative Assistant II",
+                salary: 19744.00,
+                premium: 0.00,
+                deductions: { sss: 500, schedSss: "1", philhealth: 312.5, schedPhilhealth: "1", pagibig: 100, schedPagibig: "1", tax: 0, schedTax: "2" }
+            }
+        ];
+        
+        let timesheets = JSON.parse(localStorage.getItem('payroll_timesheets')) || [];
+
+        function saveDataToStorage() {
+            localStorage.setItem('payroll_employees', JSON.stringify(employees));
+            localStorage.setItem('payroll_timesheets', JSON.stringify(timesheets));
+        }
+
+        function handleMonthlyPickerChange(monthStr) {
+            if (!monthStr) return;
+            const [y, m] = monthStr.split('-');
+            
+            const tsDate = document.getElementById('tsDate');
+            if (tsDate && tsDate.value) {
+                const day = tsDate.value.split('-')[2] || "01";
+                const maxDay = getLastDayOfMonth(parseInt(y), parseInt(m) - 1);
+                const safeDay = String(Math.min(parseInt(day), maxDay)).padStart(2, '0');
+                tsDate.value = `${y}-${m}-${safeDay}`;
+            }
+
+            autoSetDayTypeFromDate();
+            updateCutoffFromDate();
+            renderTimesheets();
+            processPayroll();
+
+            const histPicker = document.getElementById('histMonthPicker');
+            if (histPicker) {
+                histPicker.value = monthStr;
+                renderHistoryTable();
+            }
+
+            const psMonthPicker = document.getElementById('payslipMonthPicker');
+            if (psMonthPicker) {
+                psMonthPicker.value = monthStr;
+                generatePayslipView();
+            }
+        }
+
+        function updateCutoffFromDate() {
+            const dateInput = document.getElementById('tsDate');
+            const tsCutoff = document.getElementById('tsCutoffSelect');
+            if (!dateInput || !tsCutoff) return;
+
+            const dateStr = dateInput.value;
+            if (!dateStr) return;
+
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                const y = parseInt(parts[0]);
+                const m = parseInt(parts[1]);
+                const day = parseInt(parts[2]);
+
+                const lastDay = getLastDayOfMonth(y, m - 1);
+
+                if (tsCutoff.options.length >= 2) {
+                    tsCutoff.options[0].text = `1st Cut-off (1st - 15th)`;
+                    tsCutoff.options[1].text = `2nd Cut-off (16th - ${lastDay}th)`;
+                }
+
+                const targetCutoff = (day <= 15) ? "1" : "2";
+                tsCutoff.value = targetCutoff;
+            }
+        }
+
+        function handleDateInputChange(dateStr) {
+            if (!dateStr) return;
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                const y = parts[0];
+                const m = parts[1];
+
+                const picker = document.getElementById('monthlyBudgetPicker');
+                if (picker) picker.value = `${y}-${m}`;
+            }
+            autoSetDayTypeFromDate();
+            updateCutoffFromDate();
+            updateLiveBreakdown();
+            renderTimesheets();
+            processPayroll();
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto p-3.5 rounded-xl border font-semibold text-xs flex items-center justify-between shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 ${
+                type === 'error' ? 'bg-rose-950 border-rose-800 text-rose-200' :
+                type === 'success' ? 'bg-emerald-950 border-emerald-800 text-emerald-200' :
+                'bg-zinc-900 border-amber-500/40 text-amber-300'
+            }`;
+
+            const icon = type === 'error' ? 'fa-circle-xmark text-rose-400' :
+                         type === 'success' ? 'fa-circle-check text-emerald-400' :
+                         'fa-circle-info text-amber-400';
+
+            toast.innerHTML = `
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid ${icon} text-base"></i>
+                    <span>${message}</span>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-zinc-400 hover:text-zinc-100 ml-3">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function showConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirmModalTitle').textContent = title;
+            document.getElementById('confirmModalMessage').textContent = message;
+            
+            const modal = document.getElementById('customConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const btnCancel = document.getElementById('btnConfirmCancel');
+            const btnProceed = document.getElementById('btnConfirmProceed');
+
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                btnCancel.removeEventListener('click', handleCancel);
+                btnProceed.removeEventListener('click', handleProceed);
+            };
+
+            const handleCancel = () => cleanup();
+            const handleProceed = () => {
+                cleanup();
+                if (typeof onConfirm === 'function') onConfirm();
+            };
+
+            btnCancel.addEventListener('click', handleCancel);
+            btnProceed.addEventListener('click', handleProceed);
+        }
+
+        function getSelectedMonthYear() {
+            const picker = document.getElementById('monthlyBudgetPicker');
+            if (!picker || !picker.value) return { year: "2026", month: "09" };
+            const [year, month] = picker.value.split('-');
+            return { year, month };
+        }
+
+        function isTimesheetInSelectedMonth(t, targetYear, targetMonth) {
+            const y = targetYear || getSelectedMonthYear().year;
+            const m = targetMonth || getSelectedMonthYear().month;
+            const tYear = t.cutoffYear || (t.date ? t.date.split('-')[0] : "2026");
+            const tMonth = t.cutoffMonth || (t.date ? t.date.split('-')[1] : "09");
+            return tYear === y && tMonth === m;
+        }
+
+        function getFullMonthlyDeductions(employee) {
+            const sss = employee.deductions?.sss || 0;
+            const philhealth = employee.deductions?.philhealth || 0;
+            const pagibig = employee.deductions?.pagibig || 0;
+            const tax = employee.deductions?.tax || 0;
+
+            return { sss, philhealth, pagibig, tax, total: sss + philhealth + pagibig + tax };
+        }
+
+        function getCutoffScheduledDeductions(employee, cutoffPeriod) {
+            if (cutoffPeriod === "MONTH") {
+                return getFullMonthlyDeductions(employee);
+            }
+
+            const d = employee.deductions || {};
+            let sss = 0, philhealth = 0, pagibig = 0, tax = 0;
+
+            // SSS
+            if (d.schedSss === cutoffPeriod) sss = d.sss || 0;
+            else if (d.schedSss === "split") sss = (d.sss || 0) / 2;
+
+            // PhilHealth
+            if (d.schedPhilhealth === cutoffPeriod) philhealth = d.philhealth || 0;
+            else if (d.schedPhilhealth === "split") philhealth = (d.philhealth || 0) / 2;
+
+            // Pag-IBIG
+            if (d.schedPagibig === cutoffPeriod) pagibig = d.pagibig || 0;
+            else if (d.schedPagibig === "split") pagibig = (d.pagibig || 0) / 2;
+
+            // Tax
+            if (d.schedTax === cutoffPeriod) tax = d.tax || 0;
+            else if (d.schedTax === "split") tax = (d.tax || 0) / 2;
+
+            return { sss, philhealth, pagibig, tax, total: sss + philhealth + pagibig + tax };
+        }
+
+        function showView(viewId) {
+            ['payrollView', 'employeesView', 'timesheetView', 'historyView', 'payslipView'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            const target = document.getElementById(viewId);
+            if (target) target.classList.remove('hidden');
+
+            ['navPayroll', 'navEmployees', 'navTimesheet', 'navHistory', 'navPayslips'].forEach(id => {
+                const nav = document.getElementById(id);
+                if (nav) nav.className = "w-full text-left px-4 py-3 rounded-xl font-semibold text-sm flex items-center gap-3 text-zinc-400 hover:text-amber-300 hover:bg-zinc-800/50 transition";
+            });
+
+            const activeNav = {
+                'payrollView': 'navPayroll',
+                'employeesView': 'navEmployees',
+                'timesheetView': 'navTimesheet',
+                'historyView': 'navHistory',
+                'payslipView': 'navPayslips'
+            }[viewId];
+
+            if(activeNav) {
+                const activeEl = document.getElementById(activeNav);
+                if (activeEl) activeEl.className = "w-full text-left px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-3 bg-amber-500 text-zinc-950 transition shadow-md shadow-amber-500/10";
+            }
+
+            if(viewId === 'payslipView') {
+                populatePayslipDropdown();
+            }
+            if(viewId === 'timesheetView') {
+                populateTimesheetDropdown();
+                autoSetDayTypeFromDate();
+                updateCutoffFromDate();
+                updateLiveBreakdown();
+            }
+            if(viewId === 'historyView') {
+                populateHistoryFilters();
+                renderHistoryTable();
+            }
+            if(viewId === 'payrollView') {
+                processPayroll();
+            }
+        }
+
+        function timeToSeconds(timeStr) {
+            if (!timeStr) return 0;
+            const parts = timeStr.trim().split(':').map(Number);
+            return ((parts[0] || 0) * 3600) + ((parts[1] || 0) * 60) + (parts[2] || 0);
+        }
+
+        function autoSetDayTypeFromDate() {
+            const dateInput = document.getElementById('tsDate');
+            if (!dateInput) return;
+            const dateStr = dateInput.value;
+            if (!dateStr) return;
+
+            const logDate = new Date(dateStr + "T00:00:00");
+            const dayOfWeek = logDate.getDay();
+
+            const dayTypeSelect = document.getElementById('tsDayType');
+            if (!dayTypeSelect) return;
+
+            if (dayTypeSelect.value === 'ABSENT') return;
+
+            if (dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6) {
+                dayTypeSelect.value = 'RDOT';
+            } else {
+                dayTypeSelect.value = 'REGULAR';
+            }
+        }
+
+        function calculateWorkAndPay(dateStr, timeInStr, timeOutStr, monthlySalary, overrideDayType = "REGULAR") {
+            const dailyRate = monthlySalary / 22;
+            const hourlyRate = dailyRate / 8;
+            const minRate = hourlyRate / 60;
+
+            if (overrideDayType === "ABSENT") {
+                return { 
+                    renderedMinutes: 0, undertimeMins: 0, deduction: 0, absentDeduction: dailyRate,
+                    rdotPay: 0, regOtPay: 0, dayType: 'ABSENT', hrs: 0, mins: 0, multiplier: 1.0, hrsPay: 0, minsPay: 0 
+                };
+            }
+
+            if (!timeInStr || !timeOutStr || !dateStr || !monthlySalary) {
+                return { renderedMinutes: 0, undertimeMins: 0, deduction: 0, absentDeduction: 0, rdotPay: 0, regOtPay: 0, dayType: 'REGULAR', hrs: 0, mins: 0, multiplier: 1.0, hrsPay: 0, minsPay: 0 };
+            }
+
+            const LUNCH_START_SEC = 12 * 3600;
+            const LUNCH_END_SEC = 13 * 3600;
+
+            const rawInSec = timeToSeconds(timeInStr);
+            const rawOutSec = timeToSeconds(timeOutStr);
+
+            const isRestDay = (overrideDayType === "RDOT");
+
+            if (isRestDay) {
+                const RDOT_EARLIEST_IN = 8 * 3600;
+                const RDOT_LATEST_OUT = 17 * 3600;
+                const multiplier = 1.50;
+
+                let inSec = Math.max(rawInSec, RDOT_EARLIEST_IN);
+                let outSec = Math.min(rawOutSec, RDOT_LATEST_OUT);
+
+                if (outSec <= inSec) {
+                    return { renderedMinutes: 0, undertimeMins: 0, deduction: 0, absentDeduction: 0, rdotPay: 0, regOtPay: 0, dayType: 'RDOT', hrs: 0, mins: 0, multiplier, hrsPay: 0, minsPay: 0 };
+                }
+
+                let totalSec = outSec - inSec;
+                if (inSec < LUNCH_END_SEC && outSec > LUNCH_START_SEC) {
+                    const overlapStart = Math.max(inSec, LUNCH_START_SEC);
+                    const overlapEnd = Math.min(outSec, LUNCH_END_SEC);
+                    totalSec -= Math.max(0, overlapEnd - overlapStart);
+                }
+
+                const renderedMinutes = Math.floor(totalSec / 60);
+                const hrs = Math.floor(renderedMinutes / 60);
+                const mins = renderedMinutes % 60;
+
+                const hrsPay = hourlyRate * hrs * multiplier;
+                const minsPay = minRate * mins * multiplier;
+                const rdotPay = hrsPay + minsPay;
+
+                return { renderedMinutes, undertimeMins: 0, deduction: 0, absentDeduction: 0, rdotPay, regOtPay: 0, dayType: 'RDOT', hrs, mins, multiplier, hrsPay, minsPay };
+            } else {
+                const FLEXI_START_SEC = 7 * 3600;
+                const FLEXI_END_SEC = 19 * 3600;
+                const REG_REQUIRED_MINS = 10 * 60;
+
+                let inSec = Math.max(rawInSec, FLEXI_START_SEC);
+                let outSec = Math.min(rawOutSec, FLEXI_END_SEC);
+
+                let totalSec = 0;
+                if (outSec > inSec) {
+                    totalSec = outSec - inSec;
+                    if (inSec < LUNCH_END_SEC && outSec > LUNCH_START_SEC) {
+                        const overlapStart = Math.max(inSec, LUNCH_START_SEC);
+                        const overlapEnd = Math.min(outSec, LUNCH_END_SEC);
+                        totalSec -= Math.max(0, overlapEnd - overlapStart);
+                    }
+                }
+
+                let regRenderedMins = Math.floor(totalSec / 60);
+
+                let undertimeMins = 0;
+                let deduction = 0;
+                if (regRenderedMins < REG_REQUIRED_MINS) {
+                    undertimeMins = REG_REQUIRED_MINS - regRenderedMins;
+                    deduction = undertimeMins * minRate;
+                }
+
+                let otMins = 0;
+                if (rawOutSec > FLEXI_END_SEC) {
+                    otMins += Math.floor((rawOutSec - FLEXI_END_SEC) / 60);
+                } else if (regRenderedMins > REG_REQUIRED_MINS) {
+                    otMins += (regRenderedMins - REG_REQUIRED_MINS);
+                    regRenderedMins = REG_REQUIRED_MINS;
+                }
+
+                let hrs = 0, mins = 0, hrsPay = 0, minsPay = 0, regOtPay = 0;
+                const multiplier = 1.25;
+
+                if (otMins >= 15) {
+                    hrs = Math.floor(otMins / 60);
+                    mins = otMins % 60;
+                    hrsPay = hourlyRate * hrs * multiplier;
+                    minsPay = minRate * mins * multiplier;
+                    regOtPay = hrsPay + minsPay;
+                }
+
+                return { renderedMinutes: regRenderedMins + otMins, undertimeMins, deduction, absentDeduction: 0, rdotPay: 0, regOtPay, dayType: 'REGULAR', hrs, mins, multiplier, hrsPay, minsPay };
+            }
+        }
+
+        function updateLiveBreakdown() {
+            const empSelect = document.getElementById('tsEmployeeSelect');
+            if (!empSelect || !empSelect.value) return;
+
+            const empId = empSelect.value;
+            const dateStr = document.getElementById('tsDate')?.value || "";
+            const timeIn = document.getElementById('tsTimeIn')?.value || "07:00:00";
+            const timeOut = document.getElementById('tsTimeOut')?.value || "18:00:00";
+            const dayTypeOverride = document.getElementById('tsDayType')?.value || "REGULAR";
+
+            const emp = employees.find(e => e.id === empId);
+            const monthlySalary = emp ? emp.salary : 19744;
+
+            const dailyRate = monthlySalary / 22;
+            const hourlyRate = dailyRate / 8;
+            const minRate = hourlyRate / 60;
+
+            const res = calculateWorkAndPay(dateStr, timeIn, timeOut, monthlySalary, dayTypeOverride);
+
+            const elemHourly = document.getElementById('calcHourlyRate');
+            const elemMin = document.getElementById('calcMinRate');
+            if (elemHourly) elemHourly.textContent = hourlyRate.toFixed(8);
+            if (elemMin) elemMin.textContent = minRate.toFixed(8);
+
+            document.getElementById('calcHrs').textContent = res.hrs;
+            document.getElementById('calcMins').textContent = res.mins;
+            document.getElementById('calcMultiplier').textContent = res.multiplier.toFixed(2);
+            document.getElementById('calcMultiplier2').textContent = res.multiplier.toFixed(2);
+
+            document.getElementById('calcHrsPay').innerHTML = `&#8369;${res.hrsPay.toFixed(2)}`;
+            document.getElementById('calcMinsPay').innerHTML = `&#8369;${res.minsPay.toFixed(2)}`;
+            
+            const totalPay = res.dayType === 'RDOT' ? res.rdotPay : res.regOtPay;
+            document.getElementById('calcTotalSum').innerHTML = `&#8369;${totalPay.toFixed(2)}`;
+
+            if (res.dayType === 'ABSENT') {
+                document.getElementById('calcTypeBadge').textContent = '(UNPAID ABSENT DAY)';
+                document.getElementById('calcUndertimeDisplay').textContent = `Absent Deduction: 1 Day (-\u20B1${res.absentDeduction.toFixed(2)})`;
+            } else if (res.dayType === 'RDOT') {
+                document.getElementById('calcTypeBadge').textContent = '(REST DAY OVERTIME: 1.50x Multiplier)';
+                document.getElementById('calcUndertimeDisplay').textContent = '';
+            } else {
+                document.getElementById('calcTypeBadge').textContent = '(REGULAR FLEXI DAY: 1.25x OT Multiplier)';
+                if (res.undertimeMins > 0) {
+                    document.getElementById('calcUndertimeDisplay').textContent = `Undertime: ${res.undertimeMins} mins (-\u20B1${res.deduction.toFixed(2)})`;
+                } else {
+                    document.getElementById('calcUndertimeDisplay').textContent = 'Full 10-Hr Shift Completed';
+                }
+            }
+        }
+
+        function formatSchedText(schedVal) {
+            if (schedVal === "1") return "1st Cutoff";
+            if (schedVal === "2") return "2nd Cutoff";
+            return "50/50 Split";
+        }
+
+        function renderEmployees() {
+            const tbody = document.getElementById('employeesTbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            
+            employees.forEach(e => {
+                const s = e.deductions || {};
+                const daily = e.salary / 22;
+                const hourly = daily / 8;
+                const prem = e.premium || 0;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 font-bold text-zinc-100">${e.name} <span class="block text-xs text-zinc-500 font-mono">${e.id}</span></td>
+                    <td class="py-3.5 px-4 text-xs">${e.position}</td>
+                    <td class="py-3.5 px-4 font-mono">&#8369;${e.salary.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td class="py-3.5 px-4 font-mono text-emerald-400 font-bold">&#8369;${prem.toLocaleString('en-US', {minimumFractionDigits: 2})} <span class="block text-[10px] text-zinc-500 font-sans font-normal">2nd Cut-off</span></td>
+                    <td class="py-3.5 px-4 font-mono text-zinc-300">&#8369;${daily.toFixed(4)}</td>
+                    <td class="py-3.5 px-4 font-mono text-amber-400">&#8369;${hourly.toFixed(4)}</td>
+                    <td class="py-3.5 px-4">
+                        <div class="flex flex-wrap gap-1 text-[11px] font-mono">
+                            <span class="bg-zinc-950 border border-zinc-800 px-2 py-0.5 rounded text-amber-300">SSS: &#8369;${s.sss || 0} (${formatSchedText(s.schedSss)})</span>
+                            <span class="bg-zinc-950 border border-zinc-800 px-2 py-0.5 rounded text-sky-300">PH: &#8369;${s.philhealth || 0} (${formatSchedText(s.schedPhilhealth)})</span>
+                            <span class="bg-zinc-950 border border-zinc-800 px-2 py-0.5 rounded text-emerald-300">HDMF: &#8369;${s.pagibig || 0} (${formatSchedText(s.schedPagibig)})</span>
+                            <span class="bg-zinc-950 border border-zinc-800 px-2 py-0.5 rounded text-rose-300">Tax: &#8369;${s.tax || 0} (${formatSchedText(s.schedTax)})</span>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-4 text-center">
+                        <button onclick="editEmployee('${e.id}')" class="text-amber-400 text-xs mr-3 hover:underline font-bold">Edit</button>
+                        <button onclick="confirmDeleteEmployee('${e.id}')" class="text-rose-400 text-xs hover:underline">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            const statTotal = document.getElementById('statTotalEmployees');
+            if (statTotal) statTotal.textContent = employees.length;
+        }
+
+        function openEmployeeModal() {
+            document.getElementById('modalEmpId').value = '';
+            document.getElementById('modalEmpName').value = '';
+            document.getElementById('modalEmpPosition').value = '';
+            document.getElementById('modalEmpSalary').value = '19744.00';
+            document.getElementById('modalEmpPremium').value = '0.00';
+            document.getElementById('numSss').value = '500';
+            document.getElementById('schedSss').value = '1';
+            document.getElementById('numPhilhealth').value = '312.50';
+            document.getElementById('schedPhilhealth').value = '1';
+            document.getElementById('numPagibig').value = '100';
+            document.getElementById('schedPagibig').value = '1';
+            document.getElementById('numTax').value = '0';
+            document.getElementById('schedTax').value = '2';
+
+            const modal = document.getElementById('empModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function editEmployee(id) {
+            const emp = employees.find(e => e.id === id);
+            if(!emp) return;
+
+            document.getElementById('modalEmpId').value = emp.id;
+            document.getElementById('modalEmpName').value = emp.name;
+            document.getElementById('modalEmpPosition').value = emp.position;
+            document.getElementById('modalEmpSalary').value = emp.salary;
+            document.getElementById('modalEmpPremium').value = emp.premium ?? 0.00;
+            
+            document.getElementById('numSss').value = emp.deductions?.sss ?? 0;
+            document.getElementById('schedSss').value = emp.deductions?.schedSss ?? '1';
+            document.getElementById('numPhilhealth').value = emp.deductions?.philhealth ?? 0;
+            document.getElementById('schedPhilhealth').value = emp.deductions?.schedPhilhealth ?? '1';
+            document.getElementById('numPagibig').value = emp.deductions?.pagibig ?? 0;
+            document.getElementById('schedPagibig').value = emp.deductions?.schedPagibig ?? '1';
+            document.getElementById('numTax').value = emp.deductions?.tax ?? 0;
+            document.getElementById('schedTax').value = emp.deductions?.schedTax ?? '2';
+
+            const modal = document.getElementById('empModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeEmployeeModal() {
+            const modal = document.getElementById('empModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveEmployee() {
+            const id = document.getElementById('modalEmpId').value;
+            const name = document.getElementById('modalEmpName').value;
+            const position = document.getElementById('modalEmpPosition').value;
+            const salary = parseFloat(document.getElementById('modalEmpSalary').value);
+            const premium = parseFloat(document.getElementById('modalEmpPremium').value) || 0;
+
+            if(!name || isNaN(salary)) {
+                showToast("Please enter a valid Employee Name and Basic Salary.", "error");
+                return;
+            }
+
+            const deductions = {
+                sss: parseFloat(document.getElementById('numSss').value) || 0,
+                schedSss: document.getElementById('schedSss').value,
+                philhealth: parseFloat(document.getElementById('numPhilhealth').value) || 0,
+                schedPhilhealth: document.getElementById('schedPhilhealth').value,
+                pagibig: parseFloat(document.getElementById('numPagibig').value) || 0,
+                schedPagibig: document.getElementById('schedPagibig').value,
+                tax: parseFloat(document.getElementById('numTax').value) || 0,
+                schedTax: document.getElementById('schedTax').value
+            };
+
+            if(id) {
+                const emp = employees.find(e => e.id === id);
+                if (emp) {
+                    emp.name = name;
+                    emp.position = position;
+                    emp.salary = salary;
+                    emp.premium = premium;
+                    emp.deductions = deductions;
+                }
+                showToast(`Employee ${name} updated.`, "success");
+            } else {
+                const newId = "EMP-" + String(employees.length + 1).padStart(3, '0');
+                employees.push({ id: newId, name, position, salary, premium, deductions });
+                showToast(`New employee ${name} added successfully.`, "success");
+            }
+
+            saveDataToStorage();
+            renderEmployees();
+            populateTimesheetDropdown();
+            processPayroll();
+            closeEmployeeModal();
+        }
+
+        function confirmDeleteEmployee(id) {
+            const emp = employees.find(e => e.id === id);
+            showConfirmModal(
+                "Delete Employee?",
+                `Are you sure you want to delete ${emp ? emp.name : 'this employee'}? All related attendance logs will also be removed.`,
+                () => deleteEmployee(id)
+            );
+        }
+
+        function deleteEmployee(id) {
+            employees = employees.filter(e => e.id !== id);
+            timesheets = timesheets.filter(t => t.empId !== id);
+            saveDataToStorage();
+            renderEmployees();
+            populateTimesheetDropdown();
+            renderTimesheets();
+            processPayroll();
+            showToast("Employee removed successfully.", "info");
+        }
+
+        function populateTimesheetDropdown() {
+            const select = document.getElementById('tsEmployeeSelect');
+            if(!select) return;
+
+            select.innerHTML = '';
+            employees.forEach(e => {
+                select.innerHTML += `<option value="${e.id}">${e.name} (${e.id})</option>`;
+            });
+
+            const dateInput = document.getElementById('tsDate');
+            if(editingIndex === null && dateInput && !dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+        }
+
+        function addAttendanceEntry() {
+            const empIdSelect = document.getElementById('tsEmployeeSelect');
+            if(!empIdSelect || !empIdSelect.value) {
+                showToast("Please select an Employee first!", "error");
+                return;
+            }
+
+            const empId = empIdSelect.value;
+            const date = document.getElementById('tsDate')?.value || "";
+            const dayTypeOverride = document.getElementById('tsDayType')?.value || "REGULAR";
+            const timeIn = document.getElementById('tsTimeIn')?.value || "07:00:00";
+            const timeOut = document.getElementById('tsTimeOut')?.value || "18:00:00";
+
+            const selectedMY = getSelectedMonthYear();
+            const dateParts = date ? date.split('-') : [selectedMY.year, selectedMY.month, "15"];
+            const year = dateParts[0] || selectedMY.year;
+            const month = dateParts[1] || selectedMY.month;
+            const dayNum = parseInt(dateParts[2]) || 1;
+            const cutoff = document.getElementById('tsCutoffSelect')?.value || (dayNum <= 15 ? "1" : "2");
+
+            const emp = employees.find(e => e.id === empId);
+            if (!emp || !date) {
+                showToast("Date and Employee details are required!", "error");
+                return;
+            }
+
+            const res = calculateWorkAndPay(date, timeIn, timeOut, emp.salary, dayTypeOverride);
+            const updatedEntry = { 
+                empId, 
+                name: emp.name, 
+                date, 
+                cutoffYear: year,
+                cutoffMonth: month,
+                cutoffPeriod: cutoff,
+                timeIn, 
+                timeOut, 
+                renderedMinutes: res.renderedMinutes, 
+                undertimeMins: res.undertimeMins, 
+                lateDeduction: res.deduction, 
+                absentDeduction: res.absentDeduction,
+                rdotPay: res.rdotPay, 
+                regOtPay: res.regOtPay, 
+                dayType: res.dayType 
+            };
+
+            if (editingIndex !== null && editingIndex >= 0 && editingIndex < timesheets.length) {
+                timesheets[editingIndex] = updatedEntry;
+                showToast("Attendance entry updated.", "success");
+            } else {
+                timesheets.push(updatedEntry);
+                showToast("Attendance entry added to log.", "success");
+            }
+
+            saveDataToStorage();
+            resetAttendanceForm();
+            renderTimesheets();
+            processPayroll();
+        }
+
+        function resetAttendanceForm() {
+            editingIndex = null;
+            const saveBtn = document.getElementById('btnSaveAttendance');
+            if(saveBtn) {
+                saveBtn.textContent = "Add Entry";
+                saveBtn.className = "w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 h-[42px]";
+            }
+            const cancelBtn = document.getElementById('btnCancelEdit');
+            if(cancelBtn) cancelBtn.classList.add('hidden');
+
+            const tsDate = document.getElementById('tsDate');
+            if(tsDate && !tsDate.value) {
+                tsDate.value = "2026-09-15";
+            }
+            autoSetDayTypeFromDate();
+            updateCutoffFromDate();
+            if (document.getElementById('tsTimeIn')) document.getElementById('tsTimeIn').value = "07:00:00";
+            if (document.getElementById('tsTimeOut')) document.getElementById('tsTimeOut').value = "18:00:00";
+            updateLiveBreakdown();
+        }
+
+        function editTimesheetEntry(index) {
+            const entry = timesheets[index];
+            if(!entry) return;
+
+            editingIndex = index;
+            const empSelect = document.getElementById('tsEmployeeSelect');
+            if (empSelect) empSelect.value = entry.empId;
+
+            const dateElem = document.getElementById('tsDate');
+            if (dateElem) dateElem.value = entry.date;
+
+            const dayTypeElem = document.getElementById('tsDayType');
+            if (dayTypeElem) dayTypeElem.value = entry.dayType || "REGULAR";
+
+            const inElem = document.getElementById('tsTimeIn');
+            if (inElem) inElem.value = entry.timeIn;
+
+            const outElem = document.getElementById('tsTimeOut');
+            if (outElem) outElem.value = entry.timeOut;
+
+            if (entry.cutoffYear && entry.cutoffMonth) {
+                const picker = document.getElementById('monthlyBudgetPicker');
+                if (picker) picker.value = `${entry.cutoffYear}-${entry.cutoffMonth}`;
+            }
+
+            const saveBtn = document.getElementById('btnSaveAttendance');
+            if (saveBtn) {
+                saveBtn.textContent = "Update Entry";
+                saveBtn.className = "w-full bg-sky-500 hover:bg-sky-400 text-zinc-950 font-black px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 h-[42px]";
+            }
+            const cancelBtn = document.getElementById('btnCancelEdit');
+            if (cancelBtn) cancelBtn.classList.remove('hidden');
+
+            updateLiveBreakdown();
+        }
+
+        function cancelAttendanceEdit() {
+            resetAttendanceForm();
+        }
+
+        function deleteTimesheetEntry(index) {
+            if (index >= 0 && index < timesheets.length) {
+                timesheets.splice(index, 1);
+            }
+            resetAttendanceForm();
+            saveDataToStorage();
+            renderTimesheets();
+            processPayroll();
+            showToast("Attendance entry deleted.", "info");
+        }
+
+        function renderTimesheets() {
+            const tbody = document.getElementById('timesheetTbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const empSelect = document.getElementById('tsEmployeeSelect');
+            if (!empSelect) return;
+            const currentEmpId = empSelect.value;
+
+            const selectedMY = getSelectedMonthYear();
+            const currentYear = selectedMY.year;
+            const currentMonth = selectedMY.month;
+            const currentCutoff = document.getElementById('tsCutoffSelect')?.value || "1";
+
+            timesheets.forEach((t, index) => {
+                const tYear = t.cutoffYear || (t.date ? t.date.split('-')[0] : selectedMY.year);
+                const tMonth = t.cutoffMonth || (t.date ? t.date.split('-')[1] : selectedMY.month);
+                const tCutoff = t.cutoffPeriod || (t.date && parseInt(t.date.split('-')[2]) <= 15 ? "1" : "2");
+
+                if (t.empId === currentEmpId && tYear === currentYear && tMonth === currentMonth && tCutoff === currentCutoff) {
+                    const hoursRendered = (t.renderedMinutes / 60).toFixed(2);
+                    
+                    let statusBadge = "";
+                    if (t.dayType === 'ABSENT') {
+                        statusBadge = `<span class="text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/30">ABSENT (-\u20B1${(t.absentDeduction || 0).toFixed(2)})</span>`;
+                    } else if (t.dayType === 'RDOT') {
+                        statusBadge = `<span class="text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">RDOT (x1.50)</span>`;
+                    } else {
+                        statusBadge = (t.regOtPay > 0 
+                            ? `<span class="text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Reg OT (x1.25)</span>` 
+                            : (t.undertimeMins > 0 
+                                ? `<span class="text-rose-400 font-bold">${t.undertimeMins} mins short (-\u20B1${(t.lateDeduction || 0).toFixed(2)})</span>` 
+                                : `<span class="text-emerald-400">10h Shift Complete</span>`));
+                    }
+
+                    const payDisplay = t.dayType === 'RDOT' ? t.rdotPay : t.regOtPay;
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-zinc-800/40">
+                            <td class="py-2.5 px-4">${t.name}</td>
+                            <td class="py-2.5 px-4 text-xs">${t.date} <span class="block text-[10px] text-zinc-500 uppercase">${t.dayType}</span></td>
+                            <td class="py-2.5 px-4 text-xs font-bold text-zinc-100">${t.dayType === 'ABSENT' ? '---' : t.timeIn + ' / ' + t.timeOut}</td>
+                            <td class="py-2.5 px-4 text-xs text-amber-300 font-bold">${hoursRendered} hrs</td>
+                            <td class="py-2.5 px-4 text-xs">${statusBadge}</td>
+                            <td class="py-2.5 px-4 text-right text-amber-400 font-bold">&#8369;${payDisplay.toFixed(2)}</td>
+                            <td class="py-2.5 px-4 text-center">
+                                <button onclick="editTimesheetEntry(${index})" class="text-amber-400 text-xs mr-3 hover:underline font-bold">Edit</button>
+                                <button onclick="deleteTimesheetEntry(${index})" class="text-rose-400 text-xs hover:underline">Remove</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+        }
+
+        function populateHistoryFilters() {
+            const histEmp = document.getElementById('histEmpSelect');
+            if (histEmp) {
+                histEmp.innerHTML = '<option value="ALL">All Employees</option>';
+                employees.forEach(e => {
+                    histEmp.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+                });
+            }
+
+            const histPicker = document.getElementById('histMonthPicker');
+            if (histPicker && !histPicker.value) {
+                const { year, month } = getSelectedMonthYear();
+                histPicker.value = `${year}-${month}`;
+            }
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('historyTbody');
+            const tfoot = document.getElementById('historyTfoot');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const selectedEmp = document.getElementById('histEmpSelect')?.value || "ALL";
+            const histMonthPicker = document.getElementById('histMonthPicker');
+            const selectedMonthStr = histMonthPicker ? histMonthPicker.value : "2026-09";
+            const selectedCutoffFilter = document.getElementById('histCutoffSelect')?.value || "ALL";
+
+            let totalRdotOtPay = 0;
+            let totalWorkHrs = 0;
+            let matchCount = 0;
+
+            timesheets.forEach((t) => {
+                const matchEmp = (selectedEmp === "ALL" || t.empId === selectedEmp);
+                
+                const tYear = t.cutoffYear || (t.date ? t.date.split('-')[0] : "2026");
+                const tMonth = t.cutoffMonth || (t.date ? t.date.split('-')[1] : "09");
+                const tMonthStr = `${tYear}-${tMonth}`;
+
+                const matchMonth = (selectedMonthStr === tMonthStr);
+
+                // Cutoff filter logic
+                const dayNum = parseInt(t.date ? t.date.split('-')[2] : "1");
+                const entryCutoff = t.cutoffPeriod || (dayNum <= 15 ? "1" : "2");
+                const payDisplay = t.dayType === 'RDOT' ? t.rdotPay : t.regOtPay;
+
+                let matchCutoff = false;
+                if (selectedCutoffFilter === "ALL") matchCutoff = true;
+                else if (selectedCutoffFilter === "1" && entryCutoff === "1") matchCutoff = true;
+                else if (selectedCutoffFilter === "2" && entryCutoff === "2") matchCutoff = true;
+                else if (selectedCutoffFilter === "OT" && (payDisplay > 0 || t.dayType === 'RDOT')) matchCutoff = true;
+
+                if (matchEmp && matchMonth && matchCutoff) {
+                    matchCount++;
+                    const hoursRendered = (t.renderedMinutes / 60);
+
+                    totalWorkHrs += hoursRendered;
+                    totalRdotOtPay += payDisplay;
+
+                    const monthIdx = parseInt(tMonth) - 1;
+                    const mName = monthNamesList[monthIdx] || "Sep";
+                    const lastDay = getLastDayOfMonth(parseInt(tYear), monthIdx);
+                    
+                    const cutoffLabel = entryCutoff === "1" 
+                        ? `${mName} 1st Cutoff (1-15)` 
+                        : `${mName} 2nd Cutoff (16-${lastDay})`;
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-zinc-800/40">
+                            <td class="py-2.5 px-4 font-bold text-zinc-100">${t.name}</td>
+                            <td class="py-2.5 px-4 text-xs">${t.date}</td>
+                            <td class="py-2.5 px-4 text-xs text-amber-400 font-bold">${cutoffLabel}</td>
+                            <td class="py-2.5 px-4 text-xs">${t.dayType === 'ABSENT' ? 'ABSENT' : t.timeIn + ' - ' + t.timeOut}</td>
+                            <td class="py-2.5 px-4 text-xs">${hoursRendered.toFixed(2)} hrs</td>
+                            <td class="py-2.5 px-4 text-xs font-bold text-amber-400">&#8369;${payDisplay.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            if (tfoot) {
+                if (matchCount > 0) {
+                    tfoot.innerHTML = `
+                        <tr class="bg-zinc-950 text-amber-400 border-t-2 border-amber-500/40">
+                            <td colspan="4" class="py-3.5 px-4 text-left font-black uppercase tracking-wider text-amber-400">
+                                <i class="fa-solid fa-calculator mr-1"></i> TOTAL (${matchCount} entries):
+                            </td>
+                            <td class="py-3.5 px-4 font-bold text-zinc-100">${totalWorkHrs.toFixed(2)} hrs</td>
+                            <td class="py-3.5 px-4 font-black text-amber-400 text-base font-mono">&#8369;${totalRdotOtPay.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+                } else {
+                    tfoot.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="py-6 text-center text-zinc-500 italic text-xs">No attendance history records found for the selected filter.</td>
+                        </tr>
+                    `;
+                }
+            }
+        }
+
+        function processPayroll() {
+            const tbody = document.getElementById('payrollTbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const { year, month } = getSelectedMonthYear();
+            const monthName = monthFullNames[month] || "September";
+
+            const titleElem = document.getElementById('payrollTableTitle');
+            if (titleElem) {
+                titleElem.textContent = `Overall Monthly Payroll Summary (${monthName} ${year})`;
+            }
+
+            const periodLabel = document.getElementById('statBudgetPeriodLabel');
+            if (periodLabel) {
+                periodLabel.textContent = `Net Payout for ${monthName} ${year}`;
+            }
+
+            let grandGross = 0;
+            let grandDeductions = 0;
+            let grandNet = 0;
+
+            employees.forEach(e => {
+                const basicPay = e.salary; // Full monthly basic salary
+                const premiumPay = e.premium || 0; // Monthly premium pay
+
+                // Filter logs for this specific employee and month
+                const empLogs = timesheets.filter(t => t.empId === e.id && isTimesheetInSelectedMonth(t, year, month));
+
+                let totalRdot = 0;
+                let totalRegOt = 0;
+                let totalLateDeduction = 0;
+                let totalAbsentDeduction = 0;
+
+                empLogs.forEach(t => {
+                    const computed = calculateWorkAndPay(t.date, t.timeIn, t.timeOut, e.salary, t.dayType);
+                    totalRdot += computed.rdotPay;
+                    totalRegOt += computed.regOtPay;
+                    totalLateDeduction += (computed.deduction || 0);
+                    totalAbsentDeduction += (computed.absentDeduction || 0);
+                });
+
+                const grossPay = basicPay + premiumPay + totalRdot + totalRegOt;
+                const statutory = getFullMonthlyDeductions(e);
+                const totalDeductions = statutory.total + totalLateDeduction + totalAbsentDeduction;
+                const netPay = grossPay - totalDeductions;
+
+                grandGross += grossPay;
+                grandDeductions += totalDeductions;
+                grandNet += netPay;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-zinc-800/40">
+                        <td class="py-3.5 px-4 font-bold text-zinc-100">${e.name}</td>
+                        <td class="py-3.5 px-4">&#8369;${basicPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td class="py-3.5 px-4 text-emerald-400 font-bold">&#8369;${premiumPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td class="py-3.5 px-4 text-amber-400 font-bold">&#8369;${totalRdot.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td class="py-3.5 px-4 text-amber-300">&#8369;${totalRegOt.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td class="py-3.5 px-4 text-rose-400">&#8369;${totalAbsentDeduction.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td class="py-3.5 px-4 text-rose-400">&#8369;${totalLateDeduction.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td class="py-3.5 px-4 text-rose-400">&#8369;${statutory.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td class="py-3.5 px-4 text-right font-black text-amber-400">&#8369;${netPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+
+            const elemStatTotal = document.getElementById('statTotalEmployees');
+            const elemStatGross = document.getElementById('statGrossPay');
+            const elemStatDeduct = document.getElementById('statDeductions');
+            const elemStatNet = document.getElementById('statNetPay');
+
+            if (elemStatTotal) elemStatTotal.textContent = employees.length;
+            if (elemStatGross) elemStatGross.innerHTML = `&#8369;${grandGross.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            if (elemStatDeduct) elemStatDeduct.innerHTML = `&#8369;${grandDeductions.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            if (elemStatNet) elemStatNet.innerHTML = `&#8369;${grandNet.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        }
+
+        function populatePayslipDropdown() {
+            const select = document.getElementById('payslipEmployeeSelect');
+            if(!select) return;
+            select.innerHTML = '';
+            employees.forEach(e => {
+                select.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+            });
+
+            const psMonthPicker = document.getElementById('payslipMonthPicker');
+            if (psMonthPicker && !psMonthPicker.value) {
+                const { year, month } = getSelectedMonthYear();
+                psMonthPicker.value = `${year}-${month}`;
+            }
+
+            generatePayslipView();
+        }
+
+        function generatePayslipView() {
+            const empIdSelect = document.getElementById('payslipEmployeeSelect');
+            if(!empIdSelect || !empIdSelect.value) return;
+
+            const empId = empIdSelect.value;
+            const emp = employees.find(e => e.id === empId);
+            if(!emp) return;
+
+            const monthPicker = document.getElementById('payslipMonthPicker');
+            const monthStr = monthPicker ? monthPicker.value : "2026-09";
+            const [year, month] = monthStr.split('-');
+            const monthName = monthFullNames[month] || "September";
+            const monthIdx = parseInt(month) - 1;
+            const lastDay = getLastDayOfMonth(parseInt(year), monthIdx);
+
+            const cutoffPeriod = document.getElementById('payslipCutoffSelect')?.value || "1";
+            const payTypeMode = document.getElementById('payslipPayTypeSelect')?.value || "REGULAR";
+
+            // Update Headers & Period Badges
+            const psHeaderTitle = document.getElementById('psHeaderTitle');
+            const psTypeBadge = document.getElementById('psTypeBadge');
+            const psPeriod = document.getElementById('psPayPeriod');
+            const noticeBanner = document.getElementById('psNoticeBanner');
+
+            let dateRangeText = "";
+            let cutoffBadgeText = "";
+
+            if (cutoffPeriod === "1") {
+                dateRangeText = `${monthName} 1 - 15, ${year} (1st Cut-off)`;
+                cutoffBadgeText = "1ST CUT-OFF PAYSLIP";
+            } else if (cutoffPeriod === "2") {
+                dateRangeText = `${monthName} 16 - ${lastDay}, ${year} (2nd Cut-off)`;
+                cutoffBadgeText = "2ND CUT-OFF PAYSLIP";
+            } else {
+                dateRangeText = `${monthName} 1 - ${lastDay}, ${year} (Whole Month)`;
+                cutoffBadgeText = "WHOLE MONTH PAYSLIP";
+            }
+
+            if (payTypeMode === "OT_ONLY") {
+                if (psHeaderTitle) psHeaderTitle.textContent = "Separate Overtime Earnings Slip";
+                if (psTypeBadge) {
+                    psTypeBadge.textContent = "SEPARATE OVERTIME PAYSLIP";
+                    psTypeBadge.className = "inline-block px-3 py-0.5 mb-1 text-[10px] font-black uppercase rounded bg-amber-500/20 text-amber-400 border border-amber-500/40";
+                }
+                if (noticeBanner) {
+                    noticeBanner.className = "bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-xs text-amber-300 flex items-center gap-2";
+                    noticeBanner.innerHTML = `<i class="fa-solid fa-clock text-amber-400 text-sm shrink-0"></i> <span><strong>Overtime Mode:</strong> Showing separate payout for Overtime (RDOT & Regular OT) for ${dateRangeText}. Basic salary and statutory deductions are handled in the regular cutoff payslip.</span>`;
+                }
+            } else {
+                if (psHeaderTitle) psHeaderTitle.textContent = "Official Cutoff Payslip";
+                if (psTypeBadge) {
+                    psTypeBadge.textContent = cutoffBadgeText;
+                    psTypeBadge.className = "inline-block px-3 py-0.5 mb-1 text-[10px] font-black uppercase rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+                }
+                if (noticeBanner) {
+                    noticeBanner.className = "bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-xs text-zinc-400 flex items-center gap-2";
+                    noticeBanner.innerHTML = `<i class="fa-solid fa-circle-info text-amber-400 text-sm shrink-0"></i> <span><strong>Note:</strong> Overtime (RDOT & Regular OT) is <u>excluded</u> from 1st & 2nd cutoff regular payslips per company policy. Select "Separate Overtime Payslip" mode to generate standalone OT slips.</span>`;
+                }
+            }
+
+            if (psPeriod) psPeriod.textContent = `Pay Period: ${dateRangeText}`;
+
+            // Filter Attendance Logs based on cutoff choice
+            const empLogs = timesheets.filter(t => {
+                if (t.empId !== emp.id) return false;
+                if (!isTimesheetInSelectedMonth(t, year, month)) return false;
+
+                const dayNum = parseInt(t.date ? t.date.split('-')[2] : "1");
+                const entryCutoff = t.cutoffPeriod || (dayNum <= 15 ? "1" : "2");
+
+                if (cutoffPeriod === "MONTH") return true;
+                return entryCutoff === cutoffPeriod;
+            });
+
+            let calculatedRdot = 0;
+            let calculatedRegOt = 0;
+            let lateDeduction = 0;
+            let absentDeduction = 0;
+
+            empLogs.forEach(t => {
+                const computed = calculateWorkAndPay(t.date, t.timeIn, t.timeOut, emp.salary, t.dayType);
+                calculatedRdot += computed.rdotPay;
+                calculatedRegOt += computed.regOtPay;
+                lateDeduction += (computed.deduction || 0);
+                absentDeduction += (computed.absentDeduction || 0);
+            });
+
+            let basicPay = 0;
+            let premiumPay = 0;
+            let rdotPay = 0;
+            let regOtPay = 0;
+            let statutory = { sss: 0, philhealth: 0, pagibig: 0, tax: 0, total: 0 };
+
+            if (payTypeMode === "OT_ONLY") {
+                // OVERTIME ONLY PAYSLIP MODE:
+                basicPay = 0;
+                premiumPay = 0;
+                lateDeduction = 0;
+                absentDeduction = 0;
+                rdotPay = calculatedRdot;
+                regOtPay = calculatedRegOt;
+                statutory = { sss: 0, philhealth: 0, pagibig: 0, tax: 0, total: 0 };
+            } else {
+                // REGULAR CUTOFF PAYSLIP MODE (1st & 2nd Cutoff):
+                rdotPay = 0;
+                regOtPay = 0;
+
+                if (cutoffPeriod === "MONTH") {
+                    basicPay = emp.salary;
+                    premiumPay = emp.premium || 0;
+                    statutory = getFullMonthlyDeductions(emp);
+                } else if (cutoffPeriod === "1") {
+                    // 1st Cut-off: 50% Basic Salary, 0 Premium Pay
+                    basicPay = emp.salary / 2;
+                    premiumPay = 0;
+                    statutory = getCutoffScheduledDeductions(emp, cutoffPeriod);
+                } else if (cutoffPeriod === "2") {
+                    // 2nd Cut-off: 50% Basic Salary, 100% Premium Pay
+                    basicPay = emp.salary / 2;
+                    premiumPay = emp.premium || 0;
+                    statutory = getCutoffScheduledDeductions(emp, cutoffPeriod);
+                }
+            }
+
+            const grossPay = basicPay + premiumPay + rdotPay + regOtPay;
+            const totalDeductions = statutory.total + lateDeduction + absentDeduction;
+            const netPay = grossPay - totalDeductions;
+
+            document.getElementById('psEmpName').textContent = emp.name;
+            document.getElementById('psEmpPosition').textContent = emp.position;
+            document.getElementById('psBasicPay').innerHTML = `&#8369;${basicPay.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('psPremiumPay').innerHTML = `&#8369;${premiumPay.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            // Format OT labels when excluded vs when active
+            if (payTypeMode === "REGULAR") {
+                document.getElementById('psRdotPay').innerHTML = `<span class="text-zinc-500 font-sans text-[11px]">&#8369;0.00 <span class="italic">(Separate OT)</span></span>`;
+                document.getElementById('psRegOtPay').innerHTML = `<span class="text-zinc-500 font-sans text-[11px]">&#8369;0.00 <span class="italic">(Separate OT)</span></span>`;
+            } else {
+                document.getElementById('psRdotPay').innerHTML = `&#8369;${rdotPay.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('psRegOtPay').innerHTML = `&#8369;${regOtPay.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+
+            document.getElementById('psGrossPay').innerHTML = `&#8369;${grossPay.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            document.getElementById('psAbsentDeduction').innerHTML = `&#8369;${absentDeduction.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('psLateDeduction').innerHTML = `&#8369;${lateDeduction.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('psSss').innerHTML = `&#8369;${statutory.sss.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('psPhilhealth').innerHTML = `&#8369;${statutory.philhealth.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('psPagibig').innerHTML = `&#8369;${statutory.pagibig.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('psTax').innerHTML = `&#8369;${statutory.tax.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('psTotalDeductions').innerHTML = `&#8369;${totalDeductions.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('psNetPay').innerHTML = `&#8369;${netPay.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+
+        window.onload = function() {
+            renderEmployees();
+            populateTimesheetDropdown();
+            renderTimesheets();
+            processPayroll();
+            populateHistoryFilters();
+            renderHistoryTable();
+            populatePayslipDropdown();
+        };
+    </script>
+</body>
+</html>
